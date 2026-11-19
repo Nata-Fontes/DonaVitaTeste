@@ -1,0 +1,20 @@
+# Compiled class file & Maven
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# VS Code
+.vscode/
+
+# Spring Tool Suite / Eclipse
+.settings/
+.project
+.classpath
+.factorypath
+
+# Variáveis de ambiente e Sistema Operacional
+.env
+.DS_Store
+Thumbs.db
