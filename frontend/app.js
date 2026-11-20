@@ -910,3 +910,143 @@ window.addEventListener('DOMContentLoaded', function() {
     window.renderQuizStep();
     window.loadMuralFromSupabase();
 });
+
+// =========================================================================
+// INTEGRAÇÃO COM A API RESTFUL DE AVALIAÇÕES (SPRING BOOT + SWAGGER)
+// =========================================================================
+const API_AVALIACOES_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8080/avaliacoes'
+    : 'https://SUA-API-NO-RENDER-OU-KOYEB.onrender.com/avaliacoes';
+
+window.carregarAvaliacoes = async function() {
+    const grid = document.getElementById('listaAvaliacoesGrid');
+    if (!grid) return;
+
+    try {
+        const response = await fetch(API_AVALIACOES_URL);
+        if (!response.ok) throw new Error('Falha ao buscar avaliações');
+        const avaliacoes = await response.json();
+
+        if (avaliacoes.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-2 text-center py-8 bg-white rounded-2xl border border-dashed border-[#D8B4A0]">
+                    <p class="text-sm font-bold text-brand-textDark">Nenhuma avaliação registrada ainda.</p>
+                    <p class="text-xs text-brand-textMuted mt-1">Seja o primeiro a avaliar o sistema Dona Vita!</p>
+                </div>`;
+            return;
+        }
+
+        grid.innerHTML = avaliacoes.map(av => {
+            const estrelas = '★'.repeat(av.nota) + '☆'.repeat(5 - av.nota);
+            const dataFormatada = av.dataAvaliacao
+                ? new Date(av.dataAvaliacao).toLocaleDateString('pt-BR')
+                : 'Recente';
+
+            return `
+                <div class="bg-white rounded-2xl p-6 border border-[#EADBCE] shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <div>
+                                <h4 class="font-bold text-brand-textDark text-sm">${av.nome}</h4>
+                                <span class="text-[10px] text-brand-textMuted">${dataFormatada}</span>
+                            </div>
+                            <span class="text-brand-primary font-black text-base tracking-wider">${estrelas}</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-brand-textDark/90 leading-relaxed mt-2">${av.comentario}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end gap-4 text-xs font-bold">
+                        <button onclick="window.prepararEdicaoAvaliacao(${av.id})" class="text-brand-primary hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                        </button>
+                        <button onclick="window.excluirAvaliacao(${av.id})" class="text-gray-500 hover:text-red-700 flex items-center gap-1">
+                            <i class="fa-solid fa-trash"></i> Excluir
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (error) {
+        grid.innerHTML = `
+            <div class="col-span-2 text-center py-6 bg-white rounded-2xl border border-red-200">
+                <p class="text-xs font-bold text-brand-primary">Aguardando conexão com a API de Avaliações (${API_AVALIACOES_URL})</p>
+            </div>`;
+    }
+};
+
+window.handleAvaliacaoSubmit = async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('avaliacaoId').value;
+    const payload = {
+        nome: document.getElementById('avaliacaoNome').value,
+        nota: parseInt(document.getElementById('avaliacaoNota').value, 10),
+        comentario: document.getElementById('avaliacaoComentario').value
+    };
+
+    const url = id ? `${API_AVALIACOES_URL}/${id}` : API_AVALIACOES_URL;
+    const method = id ? 'PUT' : 'POST';
+
+    try {
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Erro ao salvar avaliação');
+
+        window.cancelarEdicaoAvaliacao();
+        await window.carregarAvaliacoes();
+        window.showToast(
+            id ? 'Avaliação Atualizada' : 'Avaliação Publicada',
+            id ? 'As alterações foram salvas com sucesso!' : 'Obrigado por avaliar o Dona Vita!'
+        );
+    } catch (error) {
+        window.showToast('Erro de Conexão', 'Não foi possível enviar a avaliação para a API.');
+    }
+};
+
+window.prepararEdicaoAvaliacao = async function(id) {
+    try {
+        const res = await fetch(`${API_AVALIACOES_URL}/${id}`);
+        if (!res.ok) throw new Error('Avaliação não encontrada');
+        const av = await res.json();
+
+        document.getElementById('avaliacaoId').value = av.id;
+        document.getElementById('avaliacaoNome').value = av.nome;
+        document.getElementById('avaliacaoNota').value = av.nota;
+        document.getElementById('avaliacaoComentario').value = av.comentario;
+
+        document.getElementById('avaliacaoFormTitle').innerText = `Editando Avaliação #${av.id}`;
+        document.getElementById('btnSalvarAvaliacao').innerText = 'Salvar Alterações';
+        document.getElementById('btnCancelarEdicaoAvaliacao').classList.remove('hidden');
+        document.getElementById('formAvaliacao').scrollIntoView({ behavior: 'smooth' });
+    } catch (error) {
+        window.showToast('Erro', 'Não foi possível carregar os dados desta avaliação.');
+    }
+};
+
+window.cancelarEdicaoAvaliacao = function() {
+    document.getElementById('formAvaliacao').reset();
+    document.getElementById('avaliacaoId').value = '';
+    document.getElementById('avaliacaoFormTitle').innerText = 'Deixe sua Avaliação';
+    document.getElementById('btnSalvarAvaliacao').innerText = 'Enviar Avaliação';
+    document.getElementById('btnCancelarEdicaoAvaliacao').classList.add('hidden');
+};
+
+window.excluirAvaliacao = async function(id) {
+    if (!confirm('Deseja realmente excluir esta avaliação?')) return;
+
+    try {
+        const res = await fetch(`${API_AVALIACOES_URL}/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Erro ao excluir');
+
+        await window.carregarAvaliacoes();
+        window.showToast('Avaliação Excluída', 'O registro foi removido com sucesso.');
+    } catch (error) {
+        window.showToast('Erro', 'Não foi possível excluir a avaliação.');
+    }
+};
+
+window.addEventListener('DOMContentLoaded', function() {
+    window.carregarAvaliacoes();
+});
