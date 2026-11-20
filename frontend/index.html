@@ -64,6 +64,9 @@
                 <a href="#mural" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
                     <i class="fa-regular fa-image text-brand-primary"></i> Mural
                 </a>
+                <a href="#avaliacoes" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
+                    <i class="fa-solid fa-star text-brand-primary"></i> Avaliações
+                </a>
             </nav>
 
             <!-- Ações de Autenticação / Perfil do Usuário -->
@@ -103,6 +106,7 @@
             <a href="#bancos-sangue" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary">Bancos de Sangue</a>
             <a href="#dicas-mitos" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary">Dicas & Mitos</a>
             <a href="#mural" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary"><i class="fa-regular fa-image mr-2 text-brand-primary"></i>Mural Dona Vita</a>
+            <a href="#avaliacoes" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1"><i class="fa-solid fa-star text-brand-primary"></i>Avaliações</a>
         </div>
     </header>
 
@@ -562,6 +566,67 @@
             </div>
         </section>
 
+        <!-- SEÇÃO 7: AVALIAÇÕES DA PLATAFORMA (API RESTFUL SPRING BOOT) -->
+        <section id="avaliacoes" class="py-16 bg-[#FFF4EC] border-t border-[#F3DEC3]">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-10">
+                    <span class="px-3 py-1 bg-brand-primary/10 text-brand-primary text-xs font-bold rounded-full uppercase tracking-wider">Feedback & Melhoria Contínua</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-textDark mt-2">Avaliações do Dona Vita</h2>
+                    <p class="text-brand-textMuted mt-1 max-w-2xl mx-auto text-sm sm:text-base">
+                        Avalie sua experiência com a plataforma. Suas sugestões ajudam a conectar ainda mais doadores a quem precisa!
+                    </p>
+                </div>
+
+                <!-- Formulário POST / PUT -->
+                <div class="bg-white border border-[#E1C5B6] rounded-3xl p-6 sm:p-8 shadow-sm mb-10">
+                    <h3 id="avaliacaoFormTitle" class="text-lg font-bold text-brand-textDark mb-4">Deixe sua Avaliação</h3>
+                    <form id="formAvaliacao" onsubmit="window.handleAvaliacaoSubmit(event)" class="space-y-4">
+                        <input type="hidden" id="avaliacaoId" value="">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Seu Nome</label>
+                                <input type="text" id="avaliacaoNome" required placeholder="Ex: Ana Paula"
+                                       class="w-full px-4 py-2.5 bg-brand-cream border border-[#DEC0AE] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary text-brand-textDark">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Nota (1 a 5 Estrelas)</label>
+                                <select id="avaliacaoNota"
+                                        class="w-full px-4 py-2.5 bg-brand-cream border border-[#DEC0AE] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary text-brand-textDark font-bold">
+                                    <option value="5">★★★★★ (5 - Excelente)</option>
+                                    <option value="4">★★★★☆ (4 - Muito Bom)</option>
+                                    <option value="3">★★★☆☆ (3 - Bom)</option>
+                                    <option value="2">★★☆☆☆ (2 - Regular)</option>
+                                    <option value="1">★☆☆☆☆ (1 - Precisa Melhorar)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Comentário</label>
+                            <textarea id="avaliacaoComentario" rows="3" required placeholder="Conte como foi utilizar o sistema Dona Vita..."
+                                      class="w-full px-4 py-2.5 bg-brand-cream border border-[#DEC0AE] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary text-brand-textDark"></textarea>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button type="submit" id="btnSalvarAvaliacao"
+                                    class="px-6 py-3 bg-brand-primary text-white font-bold rounded-xl text-sm hover:bg-brand-primaryDark transition-colors shadow-md">
+                                Enviar Avaliação
+                            </button>
+                            <button type="button" id="btnCancelarEdicaoAvaliacao" onclick="window.cancelarEdicaoAvaliacao()"
+                                    class="hidden px-5 py-3 bg-white border border-[#DEC0AE] text-brand-textDark font-bold rounded-xl text-sm hover:bg-gray-50">
+                                Cancelar Edição
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Lista de Avaliações (GET / PUT / DELETE) -->
+                <div id="listaAvaliacoesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Carregado via API RESTful -->
+                </div>
+            </div>
+        </section>
+        
     </main>
 
     <!-- FOOTER -->
