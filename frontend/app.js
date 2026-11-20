@@ -916,7 +916,7 @@ window.addEventListener('DOMContentLoaded', function() {
 // =========================================================================
 const API_AVALIACOES_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8080/avaliacoes'
-    : 'https://SUA-API-NO-RENDER-OU-KOYEB.onrender.com/avaliacoes';
+    : 'https://donavita-api.onrender.com/avaliacoes';
 
 window.carregarAvaliacoes = async function() {
     const grid = document.getElementById('listaAvaliacoesGrid');
