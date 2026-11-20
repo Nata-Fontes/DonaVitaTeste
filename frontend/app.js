@@ -1,6 +1,6 @@
 // CONFIGURAÇÃO DO SUPABASE
-const SUPABASE_URL = 'https://kulkfhsudewktzcacxzh.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_gbyjGc7tmw_CXybhuzcxog_rSli9LR2';
+const SUPABASE_URL = 'https://xkdjdqngyxtonjkqkxpc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_yUbVpvOvdi3kq-fsInBccA_DC3VJ41R';
 
 let sbClient = null;
 if (window.supabase && typeof window.supabase.createClient === 'function' && !SUPABASE_URL.includes('SEU_PROJETO')) {
