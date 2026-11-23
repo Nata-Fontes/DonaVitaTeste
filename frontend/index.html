@@ -577,16 +577,37 @@
                     </p>
                 </div>
 
-                <!-- Formulário POST / PUT -->
-                <div class="bg-white border border-[#E1C5B6] rounded-3xl p-6 sm:p-8 shadow-sm mb-10">
+                <!-- Aviso exibido apenas quando NÃO há usuário logado -->
+                <div id="avaliacaoLoginRequired" class="bg-white border border-[#E1C5B6] rounded-3xl p-8 shadow-sm mb-10 text-center">
+                    <div class="w-12 h-12 rounded-full bg-brand-cream text-brand-primary flex items-center justify-center text-xl mx-auto mb-3">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-brand-textDark">Faça login para avaliar o Dona Vita</h3>
+                    <p class="text-xs sm:text-sm text-brand-textMuted mt-1 max-w-md mx-auto">
+                        Apenas usuários cadastrados podem publicar, editar ou gerenciar suas avaliações na plataforma.
+                    </p>
+                    <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+                        <button type="button" onclick="window.openAuthModal('login')"
+                                class="px-6 py-2.5 rounded-full border-2 border-brand-primary text-brand-primary font-bold text-xs sm:text-sm hover:bg-brand-primary hover:text-white transition-all">
+                            Entrar na Conta
+                        </button>
+                        <button type="button" onclick="window.openAuthModal('register')"
+                                class="px-6 py-2.5 rounded-full bg-brand-primary text-white font-bold text-xs sm:text-sm hover:bg-brand-primaryDark transition-all shadow-sm">
+                            Cadastrar-se Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formulário POST / PUT (exibido apenas para usuários logados) -->
+                <div id="avaliacaoFormContainer" class="hidden bg-white border border-[#E1C5B6] rounded-3xl p-6 sm:p-8 shadow-sm mb-10">
                     <h3 id="avaliacaoFormTitle" class="text-lg font-bold text-brand-textDark mb-4">Deixe sua Avaliação</h3>
                     <form id="formAvaliacao" onsubmit="window.handleAvaliacaoSubmit(event)" class="space-y-4">
                         <input type="hidden" id="avaliacaoId" value="">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="md:col-span-2">
-                                <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Seu Nome</label>
-                                <input type="text" id="avaliacaoNome" required placeholder="Ex: Ana Paula"
-                                       class="w-full px-4 py-2.5 bg-brand-cream border border-[#DEC0AE] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary text-brand-textDark">
+                                <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Avaliando como</label>
+                                <input type="text" id="avaliacaoNome" readonly
+                                       class="w-full px-4 py-2.5 bg-gray-100 border border-[#DEC0AE] rounded-xl text-sm text-brand-textMuted font-semibold cursor-not-allowed">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Nota (1 a 5 Estrelas)</label>
@@ -602,8 +623,13 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase text-brand-textDark mb-1">Comentário</label>
-                            <textarea id="avaliacaoComentario" rows="3" required placeholder="Conte como foi utilizar o sistema Dona Vita..."
+                            <div class="flex items-center justify-between mb-1">
+                                <label class="block text-xs font-bold uppercase text-brand-textDark">Comentário</label>
+                                <span id="contadorCaracteres" class="text-xs font-bold text-brand-textMuted">0 / 300 caracteres</span>
+                            </div>
+                            <textarea id="avaliacaoComentario" rows="3" maxlength="300" required
+                                      oninput="window.atualizarContadorCaracteres()"
+                                      placeholder="Conte como foi utilizar o sistema Dona Vita (máximo 300 caracteres)..."
                                       class="w-full px-4 py-2.5 bg-brand-cream border border-[#DEC0AE] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary text-brand-textDark"></textarea>
                         </div>
 
