@@ -45,68 +45,68 @@
 
     <!-- NAVBAR TOP -->
     <header class="sticky top-0 z-40 bg-[#FFF8F4]/90 backdrop-blur-md border-b border-[#F5E6DC] shadow-sm transition-all duration-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
             
             <!-- Logo Dona Vita -->
-            <a href="#" class="Logo">
-               <img src="Logo.png" alt="Dona Vita" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <a href="#" class="Logo shrink-0 w-32 xl:w-[145px]">
+               <img src="Logo.png" alt="Dona Vita" class="w-full h-auto" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             </a>
 
             <!-- Menu de Navegação Principal -->
-            <nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-brand-textDark">
-                <a href="#necessidade" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
+            <nav class="hidden lg:flex items-center gap-3.5 xl:gap-5 text-xs xl:text-sm font-semibold text-brand-textDark">
+                <a href="#necessidade" class="whitespace-nowrap flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
                     <i class="fa-solid fa-chart-simple text-brand-primary"></i> Necessidade Sangue
                 </a>
-                <a href="#como-funciona" class="hover:text-brand-primary transition-colors py-1">Como Funciona</a>
-                <a href="#posso-doar" class="hover:text-brand-primary transition-colors py-1">Posso Doar?</a>
-                <a href="#bancos-sangue" class="hover:text-brand-primary transition-colors py-1">Bancos de Sangue</a>
-                <a href="#dicas-mitos" class="hover:text-brand-primary transition-colors py-1">Dicas & Mitos</a>
-                <a href="#mural" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
+                <a href="#como-funciona" class="whitespace-nowrap hover:text-brand-primary transition-colors py-1">Como Funciona</a>
+                <a href="#posso-doar" class="whitespace-nowrap hover:text-brand-primary transition-colors py-1">Posso Doar?</a>
+                <a href="#bancos-sangue" class="whitespace-nowrap hover:text-brand-primary transition-colors py-1">Bancos de Sangue</a>
+                <a href="#dicas-mitos" class="whitespace-nowrap hover:text-brand-primary transition-colors py-1">Dicas & Mitos</a>
+                <a href="#mural" class="whitespace-nowrap flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
                     <i class="fa-regular fa-image text-brand-primary"></i> Mural
                 </a>
-                <a href="#avaliacoes" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
+                <a href="#avaliacoes" class="whitespace-nowrap flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1">
                     <i class="fa-solid fa-star text-brand-primary"></i> Avaliações
                 </a>
             </nav>
 
             <!-- Ações de Autenticação / Perfil do Usuário -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5 shrink-0">
                 <div id="loggedOutState" class="flex items-center gap-2">
-                    <button onclick="window.openAuthModal('login')" class="px-5 py-2.5 rounded-full border-2 border-brand-primary text-brand-primary font-bold text-sm hover:bg-brand-primary hover:text-white transition-all duration-200">
+                    <button onclick="window.openAuthModal('login')" class="whitespace-nowrap px-4 xl:px-5 py-2 rounded-full border-2 border-brand-primary text-brand-primary font-bold text-xs xl:text-sm hover:bg-brand-primary hover:text-white transition-all duration-200">
                         Entrar
                     </button>
-                    <button onclick="window.openAuthModal('register')" class="px-5 py-2.5 rounded-full bg-brand-primary text-white font-bold text-sm hover:bg-brand-primaryDark transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2">
+                    <button onclick="window.openAuthModal('register')" class="whitespace-nowrap px-4 xl:px-5 py-2 rounded-full bg-brand-primary text-white font-bold text-xs xl:text-sm hover:bg-brand-primaryDark transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-1.5">
                         <i class="fa-solid fa-user-plus text-xs"></i> Cadastrar-se
                     </button>
                 </div>
 
                 <!-- Estado Logado (Oculto Inicialmente) -->
-                <div id="loggedInState" class="hidden flex items-center gap-3">
-                    <div class="flex items-center gap-2 bg-brand-cream px-3 py-1.5 rounded-full border border-[#EACEC1]">
+                <div id="loggedInState" class="hidden flex items-center gap-2.5">
+                    <div class="flex items-center gap-2 bg-brand-cream px-3 py-1.5 rounded-full border border-[#EACEC1] whitespace-nowrap">
                         <span id="userBadgeType" class="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-primary text-white">Doador</span>
-                        <span id="userNameDisplay" class="text-sm font-bold text-brand-textDark">Maria Silva</span>
+                        <span id="userNameDisplay" class="text-xs xl:text-sm font-bold text-brand-textDark max-w-[120px] truncate">Maria Silva</span>
                     </div>
-                    <button onclick="window.logout()" title="Sair da Conta" class="w-9 h-9 rounded-full bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700 flex items-center justify-center transition-colors">
+                    <button onclick="window.logout()" title="Sair da Conta" class="w-9 h-9 rounded-full bg-gray-200 text-gray-700 hover:bg-red-100 hover:text-red-700 flex items-center justify-center transition-colors shrink-0">
                         <i class="fa-solid fa-right-from-bracket text-sm"></i>
                     </button>
                 </div>
 
                 <!-- Botão Menu Mobile -->
-                <button onclick="window.toggleMobileMenu()" class="md:hidden p-2 text-brand-textDark hover:text-brand-primary">
+                <button onclick="window.toggleMobileMenu()" class="lg:hidden p-2 text-brand-textDark hover:text-brand-primary">
                     <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
             </div>
         </div>
 
         <!-- Menu Mobile Drawer -->
-        <div id="mobileMenu" class="hidden md:hidden bg-[#FFF8F4] border-b border-[#F5E6DC] px-4 pt-2 pb-6 space-y-3 font-medium">
+        <div id="mobileMenu" class="hidden lg:hidden bg-[#FFF8F4] border-b border-[#F5E6DC] px-4 pt-2 pb-6 space-y-3 font-medium">
             <a href="#necessidade" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary"><i class="fa-solid fa-chart-simple mr-2 text-brand-primary"></i>Necessidade Sangue</a>
             <a href="#como-funciona" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary">Como Funciona</a>
             <a href="#posso-doar" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary">Posso Doar?</a>
             <a href="#bancos-sangue" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary">Bancos de Sangue</a>
             <a href="#dicas-mitos" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary">Dicas & Mitos</a>
             <a href="#mural" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary"><i class="fa-regular fa-image mr-2 text-brand-primary"></i>Mural Dona Vita</a>
-            <a href="#avaliacoes" class="flex items-center gap-1.5 hover:text-brand-primary transition-colors py-1"><i class="fa-solid fa-star text-brand-primary"></i>Avaliações</a>
+            <a href="#avaliacoes" onclick="window.toggleMobileMenu()" class="block py-2 text-brand-textDark hover:text-brand-primary"><i class="fa-solid fa-star mr-2 text-brand-primary"></i>Avaliações</a>
         </div>
     </header>
 
