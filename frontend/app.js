@@ -11,6 +11,9 @@ if (window.supabase && typeof window.supabase.createClient === 'function' && !SU
     }
 }
 
+// LISTA DE E-MAILS COM PERMISSÃO DE ADMINISTRADOR (ADM)
+const ADMIN_EMAILS = ['admin@donavita.com'];
+
 // ESTADO GLOBAL
 let currentUser = null;
 let currentQuizStep = 0;
@@ -660,7 +663,7 @@ window.handleAuthSubmit = async function(e) {
     const newsletter = document.getElementById('newsletterCheck').checked;
 
     if (!sbClient) {
-        currentUser = { name, email, type: userType, newsletter };
+        currentUser = { id: email, name, email, type: userType, newsletter };
         window.closeAuthModal();
         window.updateLoggedUI();
         window.showToast('Login Simulado', `Entrou com sucesso como ${userType === 'hemocentro' ? 'Hemocentro' : 'Doador'}.`);
@@ -760,13 +763,25 @@ window.handleAuthSubmit = async function(e) {
     }
 };
 
+window.isUsuarioAdmin = function() {
+    if (!currentUser) return false;
+    return currentUser.type === 'admin' || ADMIN_EMAILS.includes((currentUser.email || '').toLowerCase());
+};
+
 window.updateLoggedUI = function() {
+    if (!currentUser) return;
+    localStorage.setItem('donavita_user', JSON.stringify(currentUser));
+
     document.getElementById('loggedOutState').classList.add('hidden');
     document.getElementById('loggedInState').classList.remove('hidden');
     document.getElementById('userNameDisplay').innerText = currentUser.name;
 
     const badge = document.getElementById('userBadgeType');
-    if(currentUser.type === 'hemocentro') {
+    if (window.isUsuarioAdmin()) {
+        badge.innerText = 'ADM';
+        badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-amber-600 text-white';
+        document.getElementById('hemocentroFabButton').classList.remove('hidden');
+    } else if (currentUser.type === 'hemocentro') {
         badge.innerText = 'Hemocentro';
         badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-brand-primary text-white';
         document.getElementById('hemocentroFabButton').classList.remove('hidden');
@@ -775,6 +790,10 @@ window.updateLoggedUI = function() {
         badge.className = 'text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white';
         document.getElementById('hemocentroFabButton').classList.add('hidden');
     }
+
+    if (typeof window.atualizarInterfaceAvaliacoes === 'function') {
+        window.atualizarInterfaceAvaliacoes();
+    }
 };
 
 window.logout = async function() {
@@ -782,9 +801,16 @@ window.logout = async function() {
         try { await sbClient.auth.signOut(); } catch(e){}
     }
     currentUser = null;
+    localStorage.removeItem('donavita_user');
+
     document.getElementById('loggedOutState').classList.remove('hidden');
     document.getElementById('loggedInState').classList.add('hidden');
     document.getElementById('hemocentroFabButton').classList.add('hidden');
+
+    if (typeof window.atualizarInterfaceAvaliacoes === 'function') {
+        window.cancelarEdicaoAvaliacao();
+        window.atualizarInterfaceAvaliacoes();
+    }
     window.showToast('Sessão Encerrada', 'Você saiu da sua conta.');
 };
 
@@ -903,20 +929,46 @@ window.showToast = function(title, message) {
     }, 4000);
 };
 
-// INICIALIZAÇÃO
-window.addEventListener('DOMContentLoaded', function() {
-    window.renderNeedChart('br');
-    window.renderHemocenters(hemocentersData);
-    window.renderQuizStep();
-    window.loadMuralFromSupabase();
-});
-
 // =========================================================================
-// INTEGRAÇÃO COM A API RESTFUL DE AVALIAÇÕES (SPRING BOOT + SWAGGER)
+// INTEGRAÇÃO COM A API RESTFUL DE AVALIAÇÕES (REGRAS DE AUTORIA, LIMITE E ADM)
 // =========================================================================
 const API_AVALIACOES_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8080/avaliacoes'
     : 'https://donavita-api.onrender.com/avaliacoes';
+
+const MAX_CARACTERES_AVALIACAO = 300;
+let avaliacoesCache = [];
+
+window.atualizarContadorCaracteres = function() {
+    const textarea = document.getElementById('avaliacaoComentario');
+    const contador = document.getElementById('contadorCaracteres');
+    if (!textarea || !contador) return;
+
+    const atual = textarea.value.length;
+    contador.innerText = `${atual} / ${MAX_CARACTERES_AVALIACAO} caracteres`;
+    contador.className = atual >= MAX_CARACTERES_AVALIACAO
+        ? 'text-xs font-bold text-red-600'
+        : 'text-xs font-bold text-brand-textMuted';
+};
+
+window.atualizarInterfaceAvaliacoes = function() {
+    const loginBox = document.getElementById('avaliacaoLoginRequired');
+    const formBox = document.getElementById('avaliacaoFormContainer');
+    const nomeInput = document.getElementById('avaliacaoNome');
+
+    if (loginBox && formBox) {
+        if (currentUser) {
+            loginBox.classList.add('hidden');
+            formBox.classList.remove('hidden');
+            if (nomeInput) nomeInput.value = currentUser.name;
+        } else {
+            loginBox.classList.remove('hidden');
+            formBox.classList.add('hidden');
+        }
+    }
+
+    window.renderizarListaAvaliacoes(avaliacoesCache);
+};
 
 window.carregarAvaliacoes = async function() {
     const grid = document.getElementById('listaAvaliacoesGrid');
@@ -925,46 +977,8 @@ window.carregarAvaliacoes = async function() {
     try {
         const response = await fetch(API_AVALIACOES_URL);
         if (!response.ok) throw new Error('Falha ao buscar avaliações');
-        const avaliacoes = await response.json();
-
-        if (avaliacoes.length === 0) {
-            grid.innerHTML = `
-                <div class="col-span-2 text-center py-8 bg-white rounded-2xl border border-dashed border-[#D8B4A0]">
-                    <p class="text-sm font-bold text-brand-textDark">Nenhuma avaliação registrada ainda.</p>
-                    <p class="text-xs text-brand-textMuted mt-1">Seja o primeiro a avaliar o sistema Dona Vita!</p>
-                </div>`;
-            return;
-        }
-
-        grid.innerHTML = avaliacoes.map(av => {
-            const estrelas = '★'.repeat(av.nota) + '☆'.repeat(5 - av.nota);
-            const dataFormatada = av.dataAvaliacao
-                ? new Date(av.dataAvaliacao).toLocaleDateString('pt-BR')
-                : 'Recente';
-
-            return `
-                <div class="bg-white rounded-2xl p-6 border border-[#EADBCE] shadow-sm flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <div>
-                                <h4 class="font-bold text-brand-textDark text-sm">${av.nome}</h4>
-                                <span class="text-[10px] text-brand-textMuted">${dataFormatada}</span>
-                            </div>
-                            <span class="text-brand-primary font-black text-base tracking-wider">${estrelas}</span>
-                        </div>
-                        <p class="text-xs sm:text-sm text-brand-textDark/90 leading-relaxed mt-2">${av.comentario}</p>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end gap-4 text-xs font-bold">
-                        <button onclick="window.prepararEdicaoAvaliacao(${av.id})" class="text-brand-primary hover:underline flex items-center gap-1">
-                            <i class="fa-solid fa-pen-to-square"></i> Editar
-                        </button>
-                        <button onclick="window.excluirAvaliacao(${av.id})" class="text-gray-500 hover:text-red-700 flex items-center gap-1">
-                            <i class="fa-solid fa-trash"></i> Excluir
-                        </button>
-                    </div>
-                </div>
-            `;
-        }).join('');
+        avaliacoesCache = await response.json();
+        window.renderizarListaAvaliacoes(avaliacoesCache);
     } catch (error) {
         grid.innerHTML = `
             <div class="col-span-2 text-center py-6 bg-white rounded-2xl border border-red-200">
@@ -973,13 +987,90 @@ window.carregarAvaliacoes = async function() {
     }
 };
 
+window.renderizarListaAvaliacoes = function(avaliacoes) {
+    const grid = document.getElementById('listaAvaliacoesGrid');
+    if (!grid) return;
+
+    if (!avaliacoes || avaliacoes.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-2 text-center py-8 bg-white rounded-2xl border border-dashed border-[#D8B4A0]">
+                <p class="text-sm font-bold text-brand-textDark">Nenhuma avaliação registrada ainda.</p>
+                <p class="text-xs text-brand-textMuted mt-1">Entre na sua conta e seja o primeiro a avaliar o sistema Dona Vita!</p>
+            </div>`;
+        return;
+    }
+
+    const isAdm = window.isUsuarioAdmin();
+
+    grid.innerHTML = avaliacoes.map(av => {
+        const estrelas = '★'.repeat(av.nota) + '☆'.repeat(5 - av.nota);
+        const dataFormatada = av.dataAvaliacao
+            ? new Date(av.dataAvaliacao).toLocaleDateString('pt-BR')
+            : 'Recente';
+
+        const isMinhaAvaliacao = currentUser && av.usuarioId &&
+            (av.usuarioId === currentUser.id || (currentUser.email && av.usuarioId === currentUser.email));
+        const podeEditar = isMinhaAvaliacao;
+        const podeExcluir = isMinhaAvaliacao || isAdm;
+
+        return `
+            <div class="bg-white rounded-2xl p-6 border ${isMinhaAvaliacao ? 'border-brand-primary/50' : 'border-[#EADBCE]'} shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-brand-textDark text-sm">${av.nome}</h4>
+                                ${isMinhaAvaliacao ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-cream text-brand-primary border border-[#DEC0AE]">Sua avaliação</span>' : ''}
+                            </div>
+                            <span class="text-[10px] text-brand-textMuted">${dataFormatada}</span>
+                        </div>
+                        <span class="text-brand-primary font-black text-base tracking-wider">${estrelas}</span>
+                    </div>
+                    <p class="text-xs sm:text-sm text-brand-textDark/90 leading-relaxed mt-2 break-words">${av.comentario}</p>
+                </div>
+
+                ${(podeEditar || podeExcluir) ? `
+                    <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-end gap-4 text-xs font-bold">
+                        ${podeEditar ? `
+                            <button onclick="window.prepararEdicaoAvaliacao(${av.id})" class="text-brand-primary hover:underline flex items-center gap-1">
+                                <i class="fa-solid fa-pen-to-square"></i> Editar
+                            </button>
+                        ` : ''}
+                        ${podeExcluir ? `
+                            <button onclick="window.excluirAvaliacao(${av.id})" class="text-gray-500 hover:text-red-700 flex items-center gap-1">
+                                <i class="fa-solid fa-trash"></i> ${!isMinhaAvaliacao && isAdm ? 'Excluir (ADM)' : 'Excluir'}
+                            </button>
+                        ` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+};
+
 window.handleAvaliacaoSubmit = async function(e) {
     e.preventDefault();
+
+    if (!currentUser) {
+        window.showToast('Acesso Restrito', 'Faça login ou cadastre-se para enviar uma avaliação.');
+        window.openAuthModal('login');
+        return;
+    }
+
     const id = document.getElementById('avaliacaoId').value;
+    const comentario = document.getElementById('avaliacaoComentario').value.trim();
+
+    if (comentario.length === 0 || comentario.length > MAX_CARACTERES_AVALIACAO) {
+        window.showToast('Limite de Caracteres', `O comentário deve ter entre 1 e ${MAX_CARACTERES_AVALIACAO} caracteres.`);
+        return;
+    }
+
     const payload = {
-        nome: document.getElementById('avaliacaoNome').value,
+        usuarioId: currentUser.id || currentUser.email,
+        usuarioEmail: currentUser.email,
+        nome: currentUser.name,
         nota: parseInt(document.getElementById('avaliacaoNota').value, 10),
-        comentario: document.getElementById('avaliacaoComentario').value
+        comentario: comentario
     };
 
     const url = id ? `${API_AVALIACOES_URL}/${id}` : API_AVALIACOES_URL;
@@ -992,13 +1083,17 @@ window.handleAvaliacaoSubmit = async function(e) {
             body: JSON.stringify(payload)
         });
 
+        if (res.status === 403) {
+            window.showToast('Sem Permissão', 'Você só pode editar suas próprias avaliações.');
+            return;
+        }
         if (!res.ok) throw new Error('Erro ao salvar avaliação');
 
         window.cancelarEdicaoAvaliacao();
         await window.carregarAvaliacoes();
         window.showToast(
             id ? 'Avaliação Atualizada' : 'Avaliação Publicada',
-            id ? 'As alterações foram salvas com sucesso!' : 'Obrigado por avaliar o Dona Vita!'
+            id ? 'Sua nota e comentário foram atualizados!' : 'Obrigado por avaliar o Dona Vita!'
         );
     } catch (error) {
         window.showToast('Erro de Conexão', 'Não foi possível enviar a avaliação para a API.');
@@ -1006,47 +1101,100 @@ window.handleAvaliacaoSubmit = async function(e) {
 };
 
 window.prepararEdicaoAvaliacao = async function(id) {
+    if (!currentUser) {
+        window.openAuthModal('login');
+        return;
+    }
+
     try {
         const res = await fetch(`${API_AVALIACOES_URL}/${id}`);
         if (!res.ok) throw new Error('Avaliação não encontrada');
         const av = await res.json();
 
+        const isAutor = av.usuarioId &&
+            (av.usuarioId === currentUser.id || (currentUser.email && av.usuarioId === currentUser.email));
+        if (!isAutor) {
+            window.showToast('Acesso Negado', 'Você só pode editar a sua própria avaliação.');
+            return;
+        }
+
         document.getElementById('avaliacaoId').value = av.id;
-        document.getElementById('avaliacaoNome').value = av.nome;
+        document.getElementById('avaliacaoNome').value = currentUser.name;
         document.getElementById('avaliacaoNota').value = av.nota;
         document.getElementById('avaliacaoComentario').value = av.comentario;
+        window.atualizarContadorCaracteres();
 
-        document.getElementById('avaliacaoFormTitle').innerText = `Editando Avaliação #${av.id}`;
+        document.getElementById('avaliacaoFormTitle').innerText = 'Editando sua Avaliação (altere a nota ou comentário)';
         document.getElementById('btnSalvarAvaliacao').innerText = 'Salvar Alterações';
         document.getElementById('btnCancelarEdicaoAvaliacao').classList.remove('hidden');
-        document.getElementById('formAvaliacao').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('avaliacaoFormContainer').scrollIntoView({ behavior: 'smooth' });
     } catch (error) {
         window.showToast('Erro', 'Não foi possível carregar os dados desta avaliação.');
     }
 };
 
 window.cancelarEdicaoAvaliacao = function() {
-    document.getElementById('formAvaliacao').reset();
+    const form = document.getElementById('formAvaliacao');
+    if (form) form.reset();
     document.getElementById('avaliacaoId').value = '';
+    if (currentUser && document.getElementById('avaliacaoNome')) {
+        document.getElementById('avaliacaoNome').value = currentUser.name;
+    }
+    window.atualizarContadorCaracteres();
     document.getElementById('avaliacaoFormTitle').innerText = 'Deixe sua Avaliação';
     document.getElementById('btnSalvarAvaliacao').innerText = 'Enviar Avaliação';
     document.getElementById('btnCancelarEdicaoAvaliacao').classList.add('hidden');
 };
 
 window.excluirAvaliacao = async function(id) {
+    if (!currentUser) {
+        window.openAuthModal('login');
+        return;
+    }
+
     if (!confirm('Deseja realmente excluir esta avaliação?')) return;
 
+    const params = new URLSearchParams({
+        usuarioId: currentUser.id || currentUser.email,
+        usuarioEmail: currentUser.email || '',
+        isAdmin: window.isUsuarioAdmin() ? 'true' : 'false'
+    });
+
     try {
-        const res = await fetch(`${API_AVALIACOES_URL}/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${API_AVALIACOES_URL}/${id}?${params.toString()}`, {
+            method: 'DELETE'
+        });
+
+        if (res.status === 403) {
+            window.showToast('Acesso Negado', 'Apenas o autor ou um ADM pode excluir este comentário.');
+            return;
+        }
         if (!res.ok) throw new Error('Erro ao excluir');
 
         await window.carregarAvaliacoes();
-        window.showToast('Avaliação Excluída', 'O registro foi removido com sucesso.');
+        window.showToast('Avaliação Excluída', 'O comentário foi removido com sucesso.');
     } catch (error) {
         window.showToast('Erro', 'Não foi possível excluir a avaliação.');
     }
 };
 
+// INICIALIZAÇÃO
 window.addEventListener('DOMContentLoaded', function() {
+    window.renderNeedChart('br');
+    window.renderHemocenters(hemocentersData);
+    window.renderQuizStep();
+    window.loadMuralFromSupabase();
+
+    const savedUser = localStorage.getItem('donavita_user');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            window.updateLoggedUI();
+        } catch (e) {
+            localStorage.removeItem('donavita_user');
+        }
+    }
+
+    window.atualizarInterfaceAvaliacoes();
     window.carregarAvaliacoes();
 });
