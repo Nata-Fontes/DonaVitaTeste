@@ -12,6 +12,11 @@ public class Avaliacao {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Apenas usuários cadastrados podem avaliar")
+    private String usuarioId;
+
+    private String usuarioEmail;
+
     @NotBlank(message = "O nome do avaliador é obrigatório")
     private String nome;
 
@@ -21,7 +26,8 @@ public class Avaliacao {
     private Integer nota;
 
     @NotBlank(message = "O comentário é obrigatório")
-    @Column(length = 1000)
+    @Size(max = 300, message = "O comentário deve ter no máximo 300 caracteres")
+    @Column(length = 300)
     private String comentario;
 
     private LocalDateTime dataAvaliacao = LocalDateTime.now();
@@ -32,6 +38,22 @@ public class Avaliacao {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getUsuarioId() {
+        return usuarioId;
+    }
+
+    public void setUsuarioId(String usuarioId) {
+        this.usuarioId = usuarioId;
+    }
+
+    public String getUsuarioEmail() {
+        return usuarioEmail;
+    }
+
+    public void setUsuarioEmail(String usuarioEmail) {
+        this.usuarioEmail = usuarioEmail;
     }
 
     public String getNome() {
